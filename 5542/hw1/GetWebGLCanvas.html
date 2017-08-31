@@ -1,0 +1,249 @@
+<!doctype html> 
+<html> 
+   <head> 
+     <title>Freddy Gu Homework 1</title> 
+     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"> 
+     <link rel="stylesheet" href="webgl.css" type="text/css"> 
+
+    <!-- Fragment shader program. Change ME!!! Also change the name. -->
+    <script id="gu-fs" type="x-shader/x-fragment">
+      precision highp float;
+      void main(void) {
+        const vec4 redBase = vec4(0.8, 0.1, 0.1, 1.0);
+        const vec4 greenBase = vec4(0.1, 0.8, 0.1, 1.0);
+        const vec4 blueBase = vec4(0.1, 0.1, 0.8, 1.0);
+        const vec4 whiteBase = vec4(0.8, 0.8, 0.8, 1.0);
+        float xSegment = floor(gl_FragCoord.x / 80.0);
+        float ySegment = floor(gl_FragCoord.y / 80.0);
+        float xPos =  mod(gl_FragCoord.x, 80.0);
+        float yPos = mod(gl_FragCoord.y, 80.0);
+
+        vec4 xBase1;
+        vec4 xBase2;
+        vec4 yMix;
+
+        if (mod(xSegment, 2.0) == 1.0) {
+          xBase1 = mix( redBase, greenBase, xPos / 80.0 );
+          xBase2 = mix( blueBase, whiteBase, xPos / 80.0 );
+        } else {
+          xBase1 = mix( greenBase, redBase, xPos / 80.0 );
+          xBase2 = mix( whiteBase, blueBase, xPos / 80.0 );
+        }
+
+        if (mod(ySegment, 2.0) == 1.0) {
+          yMix = mix ( xBase1, xBase2, yPos / 80.0 );
+        } else {
+          yMix = mix ( xBase2, xBase1, yPos / 80.0 );
+        }
+
+        gl_FragColor = yMix;
+      }
+
+
+
+
+
+
+
+    </script>
+    <!-- Vertex shader program -->
+    <script id="shader-vs" type="x-shader/x-vertex">
+        precision highp float;
+        attribute vec3 aVertexPosition;
+
+        void main(void) {
+         gl_Position = vec4(aVertexPosition, 1.0);
+        }
+    </script>
+
+     <script type="text/JavaScript"> 
+var canvas;
+var gl; // A global variable for the WebGL context
+
+//
+// Draw the scene.
+//
+function drawScene() {
+  // Clear the canvas before we start drawing on it.
+
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  // Draw the square by binding the array buffer to the square's vertices
+  // array, setting attributes, and pushing it to GL.
+  gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesBuffer);
+  gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+function start() {
+  canvas = document.getElementById('glCanvas');
+
+  // Initialize the GL context
+  gl = initWebGL(canvas);
+  
+  // Only continue if WebGL is available and working
+  if (!gl) {
+    return;
+  }
+  InitScene();
+
+  // Set up to draw the scene periodically.
+  setInterval(drawScene, 15);
+}
+
+function InitScene() {
+	setRasterOps();
+	initBuffers();
+	initShaders();
+}
+function setRasterOps() {
+  gl.viewport(0, 0, 640, 480);
+  // Set clear color to black, fully opaque
+  gl.clearColor(0.1, 0.2, 0.1, 1.0);
+  gl.clearDepth(1.0);
+  // Enable depth testing
+  gl.enable(gl.DEPTH_TEST);
+  // Near things obscure far things
+  gl.depthFunc(gl.LEQUAL);
+  // Clear the color as well as the depth buffer.
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+}
+
+//
+// Initialize the buffers we'll need. For this demo, we just have
+// one object -- a simple two-dimensional square.
+//
+function initBuffers() {
+
+  // Create a buffer for the square's vertices.
+
+  squareVerticesBuffer = gl.createBuffer();
+
+  // Select the squareVerticesBuffer as the one to apply vertex
+  // operations to from here out.
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesBuffer);
+
+  // Now create an array of vertices for the square. Note that the Z
+  // coordinate is always 0 here.
+
+  var vertices = [
+    1.0,  1.0,  0.0,
+    -1.0, 1.0,  0.0,
+    1.0,  -1.0, 0.0,
+    -1.0, -1.0, 0.0
+  ];
+
+  // Now pass the list of vertices into WebGL to build the shape. We
+  // do this by creating a Float32Array from the JavaScript array,
+  // then use it to fill the current vertex buffer.
+
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+}
+
+function initWebGL(canvas) {
+  gl = null;
+  
+  // Try to grab the standard context. If it fails, fallback to experimental.
+  gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  
+  // If we don't have a GL context, give up now
+  if (!gl) {
+    alert('Unable to initialize WebGL. Your browser may not support it.');
+  }
+  
+  return gl;
+}
+//
+// Initialize the shaders, so WebGL knows how to light our scene.
+//
+function initShaders() {
+  var fragmentShader = getShader(gl, "gu-fs");
+  var vertexShader = getShader(gl, "shader-vs");
+
+  // Create the shader program
+
+  shaderProgram = gl.createProgram();
+  gl.attachShader(shaderProgram, vertexShader);
+  gl.attachShader(shaderProgram, fragmentShader);
+  gl.linkProgram(shaderProgram);
+
+  // If creating the shader program failed, alert
+
+  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+    alert("Unable to initialize the shader program: " + gl.getProgramInfoLog(shader));
+  }
+
+  gl.useProgram(shaderProgram);
+
+  vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+  gl.enableVertexAttribArray(vertexPositionAttribute);
+}
+//
+// Loads a shader program by scouring the current document,
+// looking for a script with the specified ID.
+//
+function getShader(gl, id) {
+  var shaderScript = document.getElementById(id);
+
+  // Didn't find an element with the specified ID; abort.
+
+  if (!shaderScript) {
+    return null;
+  }
+
+  // Walk through the source element's children, building the
+  // shader source string.
+
+  var theSource = "";
+  var currentChild = shaderScript.firstChild;
+
+  while(currentChild) {
+    if (currentChild.nodeType == 3) {
+      theSource += currentChild.textContent;
+    }
+
+    currentChild = currentChild.nextSibling;
+  }
+
+  // Now figure out what type of shader script we have,
+  // based on its MIME type.
+
+  var shader;
+
+  if (shaderScript.type == "x-shader/x-fragment") {
+    shader = gl.createShader(gl.FRAGMENT_SHADER);
+  } else if (shaderScript.type == "x-shader/x-vertex") {
+    shader = gl.createShader(gl.VERTEX_SHADER);
+  } else {
+    return null;  // Unknown shader type
+  }
+
+  // Send the source to the shader object
+
+  gl.shaderSource(shader, theSource);
+
+  // Compile the shader program
+
+  gl.compileShader(shader);
+
+  // See if it compiled successfully
+
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    alert("An error occurred compiling the shaders: " + gl.getShaderInfoLog(shader));
+    return null;
+  }
+
+  return shader;
+}
+</script>
+
+</head>
+
+<body onload="start()">
+  <canvas id="glCanvas" width="640" height="480">
+    Your browser doesn't appear to support the 
+    <code>&lt;canvas&gt;</code> element.
+  </canvas>
+</body>
+</html>
