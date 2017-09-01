@@ -1,1 +1,0 @@
-(DEFUN F23 (X) (PLUS X 12 55))

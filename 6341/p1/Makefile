@@ -13,10 +13,10 @@ CXXFLAGS = -g -Wall
 COMPILE = $(CXX) $(CXXFLAGS) -c
 
 # Name of the executable; should match the contents of Runfile
-EXE = myint
+EXE = interpreter
 
 # All object files
-OBJS = main.o file1.o
+OBJS = main.o parser.o
 
 # The first target is the one that is executed when you invoke
 # "make". The line describing the action starts with <TAB>. Variable
@@ -30,8 +30,9 @@ $(EXE) : $(OBJS) # depends on all object files
 %.o : %.cc
 	$(COMPILE) -o $@ $<
 
-main.o : common.h
-# main.o : common.h file1.h
+main.o : common.h parser.h
 
-# file1.o : common.h file1.h
+parser.o : common.h token.h
 
+clean : 
+	$(RM) $(EXE) $(OBJS)
