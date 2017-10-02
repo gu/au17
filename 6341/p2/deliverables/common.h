@@ -1,0 +1,6 @@
+#define ERROR_ID -1
+#define OPEN_PARENTHESIS_ID 1
+#define CLOSING_PARENTHESIS_ID 2
+#define LITERAL_ATOM_ID 3
+#define NUMERIC_ATOM_ID 4
+#define EOF_ID 5

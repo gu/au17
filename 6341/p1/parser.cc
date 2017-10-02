@@ -2,7 +2,7 @@
 
 using namespace std;
 
-token_type getNextToken(string* input_string, int* index) {
+token_type getNextToken(string* input_string, string::size_type* index) {
     token_type ret;
   
     // Escape if the current position is at the end of an input line.

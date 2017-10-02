@@ -1,0 +1,1 @@
+(COND ((LESS 6 5) 1) ((GREATER 6 5) 2))

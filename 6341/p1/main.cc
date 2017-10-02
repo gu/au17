@@ -18,7 +18,7 @@ int main() {
 
   while (getline(cin, input_line)) {
 
-    int line_idx = 0;
+    string::size_type line_idx = 0;
 
     token_type tok = getNextToken(&input_line, &line_idx);
     while (tok.type != ERROR_ID && tok.type != EOF_ID) {

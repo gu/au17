@@ -3,4 +3,4 @@
 
 using namespace std;
 
-token_type getNextToken(string* input_string, int* index);
+token_type getNextToken(string* input_string, string::size_type* index);

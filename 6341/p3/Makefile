@@ -7,7 +7,7 @@
 CXX = g++
 
 # C++ compiler flags
-CXXFLAGS = -std=c++11 -g -Wall
+CXXFLAGS = -std=c++0x -g -Wall
 
 # Creating a .o file
 COMPILE = $(CXX) $(CXXFLAGS) -c
@@ -16,7 +16,7 @@ COMPILE = $(CXX) $(CXXFLAGS) -c
 EXE = interpreter
 
 # All object files
-OBJS = main.o parser.o
+OBJS = main.o scanner.o parser.o
 
 # The first target is the one that is executed when you invoke
 # "make". The line describing the action starts with <TAB>. Variable
@@ -32,7 +32,9 @@ $(EXE) : $(OBJS) # depends on all object files
 
 main.o : common.h parser.h
 
-parser.o : common.h token.h
+scanner.o : common.h token.h
+
+parser.o : common.h scanner.h node.h
 
 clean : 
 	$(RM) $(EXE) $(OBJS)

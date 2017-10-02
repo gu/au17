@@ -1,0 +1,34 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/freddygu/dev/au17/6341/p2/common.h
+
+/Users/freddygu/dev/au17/6341/p2/main.cc
+iostream
+-
+common.h
+/Users/freddygu/dev/au17/6341/p2/common.h
+scanner.h
+/Users/freddygu/dev/au17/6341/p2/scanner.h
+
+/Users/freddygu/dev/au17/6341/p2/scanner.cc
+scanner.h
+/Users/freddygu/dev/au17/6341/p2/scanner.h
+
+/Users/freddygu/dev/au17/6341/p2/scanner.h
+iostream
+-
+common.h
+/Users/freddygu/dev/au17/6341/p2/common.h
+token.h
+/Users/freddygu/dev/au17/6341/p2/token.h
+
+/Users/freddygu/dev/au17/6341/p2/token.h
+string
+-
+
