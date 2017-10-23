@@ -1,1 +1,1 @@
-(COND ((LESS 6 5) 1) ((GREATER 6 5) 2))
+(COND ((GREATER 2 5) 4) ((ATOM (CONS 3 6)) 7) ((EQ 234 NIL) 1) ((CAR (CONS 9 8)) 12345) )
