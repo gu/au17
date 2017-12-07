@@ -1,0 +1,14 @@
+﻿<Properties>
+  <MonoDevelop.Ide.Workbench ActiveDocument="DemoFramework/Cube.cpp">
+    <Files>
+      <File FileName="DemoFramework/Color.cpp" Line="10" Column="21" />
+      <File FileName="DemoFramework/Cube.cpp" Line="11" Column="24" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MultiItemStartupConfigurations />
+</Properties>

@@ -1,10 +1,12 @@
 import nltk
-nltk.download('punkt')
 import string
-import random
 from collections import Counter
-import heapq
 import math
+import random
+
+import time
+
+nltk.download('punkt')
 
 word_dict = {}
 word_count = 0
@@ -20,29 +22,21 @@ training_set = list()
 validation_set = list()
 testing_set = list()
 
-def split_dataset():
-    global training_set
-    global validation_set
-    global testing_set
-    print("Splitting dataset")
-    idx_list = list(range(0, 3000))
-    random.shuffle(idx_list)
-    training_set = idx_list[0:1800]
-    validation_set = idx_list[1800:2400]
-    testing_set = idx_list[2400:3000]
 
-def build_D2():
+def build_d2():
+    global freq_words_idx
     print("Building pruned feature set of size 1000")
-    freq_words = heapq.nlargest(1000, word_dict, key=lambda e: word_dict[e][1])
+    freq_words = sorted(word_dict, key=lambda e: word_dict[e][1])[word_count - 1000:]
     freq_words_idx = [word_dict[freq_word][0] for freq_word in freq_words]
 
     for row in D:
         D2.append([i for i in row if i in freq_words_idx])
-        
+
     print("Pruned feature vector construction complete.")
     print("M (Number of sentences): {}".format(len(D2)))
     print("N (Number of unique words): {}".format(len(freq_words_idx)))
     print()
+
 
 def abs_diff(a, b):
     a_counter = Counter(a)
@@ -52,18 +46,19 @@ def abs_diff(a, b):
     all_idx = list(set(a_counter) | set(b_counter))
 
     for idx in all_idx:
-        diff = diff + math.pow(a_counter[idx] - b_counter[idx], 2)
+        diff += math.pow(a_counter[idx] - b_counter[idx], 2)
 
     diff = math.sqrt(diff)
 
     return diff
 
-def run_k_nn(input_data, k):
+
+def run_k_nn(input_data, k, fv):
     global training_set
-    nearest_neighbors = heapq.nsmallest(k, training_set, key=lambda e: abs_diff(input_data, D[e]))
+    nearest_neighbors = sorted(training_set, key=lambda e: abs_diff(input_data, fv[e]))[:k]
     nearest_neighbors_c = [classification_list[i] for i in nearest_neighbors]
-    print(nearest_neighbors_c)
     return max(nearest_neighbors_c, key=nearest_neighbors_c.count)
+
 
 def run_k_validation(fv, k):
     global validation_set
@@ -72,12 +67,14 @@ def run_k_validation(fv, k):
 
     for s in validation_set:
         input_data = fv[s]
-        sentiment = classification_list[s]
-        computed_sentiment = run_k_nn(input_data, k)
-        if computed_sentiment == sentiment:
-            correct = correct + 1
-        total = total + 1
+        time1 = time.time()
+        computed_sentiment = run_k_nn(input_data, k, fv)
+        time2 = time.time()
+        print("time: {}".format(time2-time1))
+        correct += 1 if computed_sentiment == classification_list[s] else 0
+        total += 1
     return correct / total
+
 
 def run_k_testing(fv, k):
     global testing_set
@@ -86,65 +83,143 @@ def run_k_testing(fv, k):
 
     for s in testing_set:
         input_data = fv[s]
-        sentiment = classification_list[s]
-        computed_sentiment = run_k_nn(input_data, k)
-        if computed_sentiment == sentiment:
-            correct = correct + 1
-        total = total + 1
+        
+        computed_sentiment = run_k_nn(input_data, k, fv)
+        correct += 1 if computed_sentiment == classification_list[s] else 0
+        total += 1
     return correct / total
+
 
 def get_best_k(fv):
     best_k = 0
     best_k_score = 0
-    for k in range(2):
-        print("Testing k-NN on validation set with k: {}".format(k+1))
-        k_score = run_k_validation(fv, k+1)
+    for k in range(10):
+        print("Testing k-NN on validation set with k: {}".format(k + 1))
+        k_score = run_k_validation(fv, k + 1)
         print("Accuracy: {}".format(k_score))
         if k_score > best_k_score:
             best_k = k
             best_k_score = k_score
-        
+
     print()
-    return best_k+1
+    return best_k + 1
 
 
-with open('all.txt') as f:
+def run_n_bayes(pruned, fv):
+    correct = 0
+    total = 0
+    training_set_bayes = training_set + validation_set
+
+    c1 = [x for x in training_set_bayes if classification_list[x] == 1]
+    c1_dict = {}
+    for s_idx in c1:
+        data_set_tmp = set(fv[s_idx])
+        for w_idx in data_set_tmp:
+            if w_idx in c1_dict:
+                c1_dict[w_idx] += 1
+            else:
+                c1_dict[w_idx] = 1
+
+    c2 = [x for x in training_set_bayes if classification_list[x] == 0]
+    c2_dict = {}
+    for s_idx in c2:
+        data_set_tmp = set(fv[s_idx])
+        for w_idx in data_set_tmp:
+            if w_idx in c2_dict:
+                c2_dict[w_idx] += 1
+            else:
+                c2_dict[w_idx] = 1
+
+    training_set_bayes_l = len(training_set_bayes)
+    p_c1 = len(c1) / training_set_bayes_l
+    p_c2 = len(c2) / training_set_bayes_l
+
+    range_to_check = freq_words_idx if pruned else range(word_count)
+
+    time1 = time.time()
+    for x_idx in testing_set:
+        x = fv[x_idx]
+        p_s_c1 = 1
+        p_s_c2 = 1
+        for word_idx in range_to_check:
+            c1_f = (c1_dict[word_idx] if word_idx in c1_dict else 0)
+            c2_f = (c2_dict[word_idx] if word_idx in c2_dict else 0)
+            if word_idx in x:
+                p_x_c1 = c1_f / len(c1)
+                p_s_c1 *= p_x_c1
+                p_x_c2 = c2_f / len(c1)
+                p_s_c2 *= p_x_c2
+            else:
+                p_x_c1 = (len(c1) - c1_f) / len(c1)
+                p_s_c1 *= p_x_c1
+                p_x_c2 = (len(c2) - c2_f) / len(c2)
+                p_s_c2 *= p_x_c2
+
+        computed_sentiment = 1 if (p_s_c1*p_c1) > (p_s_c2*p_c2) else 0
+        correct += 1 if computed_sentiment == classification_list[x_idx] else 0
+        total += 1
+
+    time2 = time.time()
+    print("time: {}".format(time2-time1))
+    return correct/total
+
+with open("all.txt") as f:
     for line in f:
-        sentence_raw, sentiment_raw = line.split('\t')
+        sentence_raw, sentiment_raw = line.split("\t")
+        sentiment = int(sentiment_raw)
+
         sentence_list.append(sentence_raw)
         D.append(list())
-        sentiment = int(sentiment_raw)
         classification_list.append(sentiment)
+
         sentence = sentence_raw.translate(translator).lower()
         tokens = nltk.word_tokenize(sentence)
-        
+
+        r = random.random()
+        if r < 0.8:
+            training_set.append(len(D) - 1)
+        elif 0.8 <= r < 0.9:
+            validation_set.append(len(D) - 1)
+        elif r >= 0.9:
+            testing_set.append(len(D) - 1)
+
         for token in tokens:
             if token in word_dict:
                 word_entry = word_dict[token]
                 D[-1].append(word_entry[0])
-                word_entry[1] = word_entry[1] + 1
+                word_entry[1] += 1
             else:
                 word_dict[token] = [word_count, 1]
                 D[-1].append(word_count)
-                word_count = word_count + 1
+                word_count += 1
+
     print("Feature vector construction complete.")
     print("M (Number of sentences): {}".format(len(D)))
     print("N (Number of unique words): {}".format(word_count))
     print()
 
-    split_dataset()
-    build_D2()
+    build_d2()
 
-    ## Run kNN related functions
-    k = get_best_k(D)
-    print("Running k-NN on the testing set using k: {}".format(k))
+    # Run kNN related functions
+    # k = get_best_k(D)
+    # print("Running k-NN on the testing set using k: {}".format(k))
 
-    knn_accuracy = run_k_testing(D, k)
-    print("Testing set accuracy: {}".format(knn_accuracy))
-    print()
-    print("Running k-NN on the pruned feature vector")
-    k = get_best_k(D2)
-    print("Running k-NN on the testing set using k: {}".format(k))
+    # knn_accuracy = run_k_testing(D, k)
+    # print("Testing set accuracy: {}".format(knn_accuracy))
+    # print()
+    # print("Running k-NN on the pruned feature vector")
+    # k = get_best_k(D2)
+    # print("Running k-NN on the testing set using k: {}".format(k))
 
-    knn_accuracy = run_k_testing(D2, k)
-    print("Testing set accuracy: {}".format(knn_accuracy))
+    # knn_accuracy = run_k_testing(D2, k)
+    # print("Testing set accuracy: {}".format(knn_accuracy))
+    # print()
+
+    # Run Naive Bayes Classifier
+    # print("Running Naive Bayes Classifier on original dataset.")
+    # nb_accuracy = run_n_bayes(False, D)
+    # print("Testing set accuracy: {}".format(nb_accuracy))
+
+    print("Running Naive Bayes Classifier on pruned dataset.")
+    nb_accuracy = run_n_bayes(True, D2)
+    print("Testing set accuracy: {}".format(nb_accuracy))
